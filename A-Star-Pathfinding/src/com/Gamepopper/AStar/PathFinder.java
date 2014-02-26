@@ -9,7 +9,7 @@ public class PathFinder {
 	private Array<Array<GridNode>> grid = new Array<Array<GridNode>>();
 	private Array<GridNode> openPath = new Array<GridNode>();
 	private Array<GridNode> closedPath = new Array<GridNode>();
-	private Array<GridNode> openTemp = new Array<GridNode>();
+	private Array<GridNode> finalPath = new Array<GridNode>();
 	private int GridX, GridY;
 	private int StartX = -1, StartY = -1;
 	private int EndX = -1, EndY = -1;
@@ -52,6 +52,7 @@ public class PathFinder {
 		//Clear current path
 		openPath.clear();
 		closedPath.clear();
+		finalPath.clear();
 		
 		//Reset all F, G and H values to 0
 		for (int y = 0; y < grid.size; y++)
@@ -76,15 +77,14 @@ public class PathFinder {
 			openPath.add(grid.get(StartY).get(StartX)); //Add Start node to open
 			SetOpenList(StartX, StartY); //Set neighbours.
 			
-			closedPath.add(grid.get(StartY).get(StartX)); //Add Start node to closed.
-			openPath.removeValue(grid.get(StartY).get(StartX),true); //Remove Start Node from open.
-			openTemp = openPath;
+			closedPath.add(openPath.first()); //Add Start node to closed.
+			openPath.removeIndex(0); //Remove Start Node from open.
 			
-			while (closedPath.get(closedPath.size - 1) != grid.get(EndY).get(EndX))
+			while (closedPath.peek() != grid.get(EndY).get(EndX))
 			{				
 				if (openPath.size != 0)
 				{
-					float bestF = 10000;
+					float bestF = 100000;
 					int bestFIndex = -1;
 					
 					//Get node with lowest F in open.
@@ -100,12 +100,12 @@ public class PathFinder {
 					if (bestFIndex != -1)
 					{
 						closedPath.add(openPath.get(bestFIndex)); //Add node to closed list
-						openPath.removeValue(openPath.get(bestFIndex), true); //remove from open list
+						openPath.removeIndex(bestFIndex); //remove from open list
 						
-						openPath = new Array<GridNode>();
+						//openPath = new Array<GridNode>();
 						
 						//Set Neighbours for parent
-						SetOpenList((int)(closedPath.get(closedPath.size-1).X/GridX), (int)(closedPath.get(closedPath.size-1).Y/GridY));
+						SetOpenList((int)(closedPath.peek().X/GridX), (int)(closedPath.peek().Y/GridY));
 					}
 					else
 						return NonExistant;
@@ -117,21 +117,18 @@ public class PathFinder {
 			}
 		}
 		
-		return Found;
-	}
-	
-	public void CompareParentwithOpen(GridNode Parent, GridNode Open)
-	{
-		//If the G value of open is smaller than the G value in Parent, recalculate F, G and H.
-		if (Open.G < Parent.G)
+		GridNode g = closedPath.peek();
+		finalPath.add(g);
+		
+		while (g != grid.get(StartY).get(StartX))
 		{
-			openPath.get(
-					openPath.indexOf(Open, true)).CalculateNode(
-							Parent, 
-							grid.get(StartY).get(StartX), 
-							grid.get(EndY).get(EndX));
-			openTemp.add(Open);
+			g = g.Parent;
+			finalPath.add(g);
 		}
+		
+		finalPath.reverse();
+		
+		return Found;
 	}
 	
 	public void SetOpenList(int X, int Y)
@@ -142,20 +139,17 @@ public class PathFinder {
 		Boolean ignoreUp = (Y - 1 < 0);
 		Boolean ignoreDown = (Y + 1 >= grid.size);
 		
-		new Array<GridNode>();
-		
 		//For each check, if the checked grid is not an unpassable type and not in the closed list, continute checking.
 		//If checked grid is already in Open List, go to Compare parent with open.
 		if (!ignoreLeft && !ignoreUp)
 		{
 			if (grid.get(Y-1).get(X-1).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y-1).get(X-1), true))
+					!(closedPath.contains(grid.get(Y-1).get(X-1), true) || closedPath.contains(grid.get(Y-1).get(X-1), false)))
 			{
 				if (!(openPath.contains(grid.get(Y-1).get(X-1), true) || openPath.contains(grid.get(Y-1).get(X-1), false)))
 				{
 					grid.get(Y-1).get(X-1).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y-1).get(X-1));
-					openTemp.add(grid.get(Y-1).get(X-1));
 				}
 				else
 				{
@@ -168,13 +162,12 @@ public class PathFinder {
 		if (!ignoreUp)
 		{
 			if (grid.get(Y-1).get(X).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y-1).get(X), true))
+					!(closedPath.contains(grid.get(Y-1).get(X), true) || closedPath.contains(grid.get(Y-1).get(X), false)))
 			{
 				if (!(openPath.contains(grid.get(Y-1).get(X), true) || openPath.contains(grid.get(Y-1).get(X), false)))
 				{
 					grid.get(Y-1).get(X).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y-1).get(X));
-					openTemp.add(grid.get(Y-1).get(X));
 				}
 				else
 				{
@@ -187,13 +180,12 @@ public class PathFinder {
 		if (!ignoreRight && !ignoreUp)
 		{
 			if (grid.get(Y-1).get(X+1).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y-1).get(X+1), true))
+					!(closedPath.contains(grid.get(Y-1).get(X+1), true) || closedPath.contains(grid.get(Y-1).get(X+1), false)))
 			{
 				if (!(openPath.contains(grid.get(Y-1).get(X+1), true) || openPath.contains(grid.get(Y-1).get(X+1), false)))
 				{
 					grid.get(Y-1).get(X+1).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y-1).get(X+1));
-					openTemp.add(grid.get(Y-1).get(X+1));
 				}
 				else
 				{
@@ -206,13 +198,12 @@ public class PathFinder {
 		if (!ignoreLeft)
 		{
 			if (grid.get(Y).get(X-1).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y).get(X-1), true))
+					!(closedPath.contains(grid.get(Y).get(X-1), true) || closedPath.contains(grid.get(Y).get(X-1), false)))
 			{
 				if (!(openPath.contains(grid.get(Y).get(X-1), true) || openPath.contains(grid.get(Y).get(X-1), false)))
 				{
 					grid.get(Y).get(X-1).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y).get(X-1));
-					openTemp.add(grid.get(Y).get(X-1));
 				}
 				else
 				{
@@ -225,13 +216,12 @@ public class PathFinder {
 		if (!ignoreRight)
 		{
 			if (grid.get(Y).get(X+1).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y).get(X+1), true))
+					!(closedPath.contains(grid.get(Y).get(X+1), true) || closedPath.contains(grid.get(Y).get(X+1), false)))
 			{
 				if (!(openPath.contains(grid.get(Y).get(X+1), true) || openPath.contains(grid.get(Y).get(X+1), false)))
 				{
 					grid.get(Y).get(X+1).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y).get(X+1));
-					openTemp.add(grid.get(Y).get(X+1));
 				}
 				else
 				{
@@ -244,13 +234,12 @@ public class PathFinder {
 		if (!ignoreLeft && !ignoreDown)
 		{
 			if (grid.get(Y+1).get(X-1).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y+1).get(X-1), true))
+					!(closedPath.contains(grid.get(Y+1).get(X-1), true) || closedPath.contains(grid.get(Y+1).get(X-1), false)))
 			{
 				if (!(openPath.contains(grid.get(Y+1).get(X-1), true) || openPath.contains(grid.get(Y+1).get(X-1), false)))
 				{
 					grid.get(Y+1).get(X-1).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y+1).get(X-1));
-					openTemp.add(grid.get(Y+1).get(X-1));
 				}
 				else
 				{
@@ -263,13 +252,12 @@ public class PathFinder {
 		if (!ignoreDown)
 		{
 			if (grid.get(Y+1).get(X).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y+1).get(X), true))
+					!(closedPath.contains(grid.get(Y+1).get(X), true) || closedPath.contains(grid.get(Y+1).get(X), false)))
 			{
 				if (!(openPath.contains(grid.get(Y+1).get(X), true) || openPath.contains(grid.get(Y+1).get(X), false)))
 				{
 					grid.get(Y+1).get(X).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y+1).get(X));
-					openTemp.add(grid.get(Y+1).get(X));
 				}
 				else
 				{
@@ -282,13 +270,12 @@ public class PathFinder {
 		if (!ignoreRight && !ignoreDown)
 		{
 			if (grid.get(Y+1).get(X+1).type != GridNode.GridType.UNPASSABLE && 
-					!closedPath.contains(grid.get(Y+1).get(X+1), true))
+					!(closedPath.contains(grid.get(Y+1).get(X+1), true) || closedPath.contains(grid.get(Y+1).get(X+1), false)))
 			{
 				if (!(openPath.contains(grid.get(Y+1).get(X+1), true) || openPath.contains(grid.get(Y+1).get(X+1), false)))
 				{
 					grid.get(Y+1).get(X+1).CalculateNode(grid.get(Y).get(X), grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
 					openPath.add(grid.get(Y+1).get(X+1));
-					openTemp.add(grid.get(Y+1).get(X));
 				}
 				else
 				{
@@ -297,11 +284,49 @@ public class PathFinder {
 				}
 			}
 		}
+	}
+	
+	public void CompareParentwithOpen(GridNode Parent, GridNode Open)
+	{
+		float tempGCost = Open.G;
 		
-		/*for (GridNode c : closedPath) //incase any nodes in closed are in open, remove closed nodes.
+		if (Math.abs(Open.X - Parent.X)/GridX == 1 && Math.abs(Open.Y - Parent.Y)/GridY == 1)
 		{
-			openPath.removeValue(c, true);
-		}*/
+			tempGCost += 14;
+		}
+		else
+		{
+			tempGCost += 10;
+		}
+		
+		//If the G value of open is smaller than the G value in Parent, recalculate F, G and H.
+		if (tempGCost < Parent.G)
+		{
+			Open.CalculateNode(Parent, 
+							grid.get(StartY).get(StartX), 
+							grid.get(EndY).get(EndX));
+			openPath.set(openPath.indexOf(Open, true), Open);
+		}
+	}
+	
+	public GridNode LookNode(GridNode Parent, GridNode Current)
+	{
+		if (Current.type != GridNode.GridType.UNPASSABLE && 
+				!(closedPath.contains(Current, true) || closedPath.contains(Current, false)))
+		{
+			if (!(openPath.contains(Current, true) || openPath.contains(Current, false)))
+			{
+				Current.CalculateNode(Parent, grid.get(StartY).get(StartX), grid.get(EndY).get(EndX));
+				openPath.add(Current);
+			}
+			else
+			{
+				CompareParentwithOpen(Parent, 
+						openPath.get(openPath.indexOf(Current, true)));
+			}
+		}
+		
+		return Current;
 	}
 	
 	public void SetGridNode(int screenX, int screenY, GridNode.GridType Type)
@@ -361,16 +386,16 @@ public class PathFinder {
 	
 	public Array<GridNode> GetPath()
 	{
-		return closedPath;
+		return finalPath;
 	}
 	
 	public void DrawGrid(ShapeRenderer shape)
 	{
 		shape.begin(ShapeType.Filled);
 		
-		for (int i = 0; i < closedPath.size; i++)
+		for (int i = 0; i < finalPath.size; i++)
 		{
-			GridNode g = closedPath.get(i);
+			GridNode g = finalPath.get(i);
 			shape.setColor(Color.YELLOW);
 			shape.rect(g.X, g.Y, g.Width, g.Height);
 		}

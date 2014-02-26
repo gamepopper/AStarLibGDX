@@ -41,7 +41,7 @@ public class GameState implements InputProcessor {
 	
 	public void LoadContent()
 	{
-		pathFinder = new PathFinder(screenWidth, screenHeight, 20);
+		pathFinder = new PathFinder(screenWidth, screenHeight, 40);
 		font = new BitmapFont(true);
 		font.setColor(Color.BLACK);
 	}

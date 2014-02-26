@@ -5,6 +5,7 @@ public class GridNode {
 	public int Width = 10, Height = 10;
 	public GridType type = GridType.NONE;
 	public float F = 0, G = 0, H = 0;
+	public GridNode Parent = null;
 	
 	public static enum GridType
 	{
@@ -54,6 +55,8 @@ public class GridNode {
 	
 	public void CalculateNode(GridNode Parent, GridNode Start, GridNode End)
 	{
+		this.Parent = Parent;
+		
 		if (Parent != null)
 		{
 			if (Math.abs(X - Parent.X) != 0 &&
@@ -77,11 +80,26 @@ public class GridNode {
 	    else
 	    	H = 14*xDistance + 10*(yDistance-xDistance);
 		
+		//H = (float) Math.sqrt(Math.pow((X-End.X)/Width, 2) + Math.pow((Y-End.Y)/Height, 2));
+		
 		F = G + H;
 	}
 	
 	public void Reset()
 	{
 		F = G = H = 0;
+	}
+	
+	@Override
+	public boolean equals(Object obj)
+	{
+		super.equals(obj);
+		GridNode a = (GridNode)obj;
+		
+		return (X == a.X && 
+				Y == a.Y &&
+				Width == a.Width &&
+				Height == a.Height &&
+				type == a.type);
 	}
 }
