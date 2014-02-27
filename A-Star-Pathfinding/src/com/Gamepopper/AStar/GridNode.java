@@ -4,7 +4,13 @@ public class GridNode {
 	public float X = 0, Y = 0;
 	public int Width = 10, Height = 10;
 	public GridType type = GridType.NONE;
+	
+	/*These three floats are for path scoring, F Cost, G Cost and Heuristical value*/
 	public float F = 0, G = 0, H = 0;
+	
+	/*Parent Node is used for tracing the final path. 
+	 * The node set to be the parent should be the node that leads the shortest route from
+	 * the End to the Start*/
 	public GridNode Parent = null;
 	
 	public static enum GridType
@@ -59,6 +65,9 @@ public class GridNode {
 		
 		if (Parent != null)
 		{
+			/*G Cost is movement cost between this node's parent and itself.
+			 * If Horizontal/Vertical, the G Cost is 10.
+			 * If Diagonal, the G Cost is sqrt(10^2 + 10^2) = 14.44... or 14 for rounding.*/
 			if (Math.abs(X - Parent.X) != 0 &&
 					Math.abs(Y - Parent.Y) != 0)
 			{
@@ -70,8 +79,14 @@ public class GridNode {
 			}
 		}
 		
+		/*Heuristic Value is the distance between this node and the end node. It's used to optimise the search
+		 *for the best node in each turn.		
+		 */
+		
+		/*Manhattan Method of Calculating Heuristic, simpler to calculate but innaccurate for 8-way pathfinding*/
 		//H = ((Math.abs(X-End.X)/Width) + (Math.abs(Y - End.Y)/Height)) * 10;
 		
+		/*Diagonal Shortcut of Calculating Heuristic, takes diagonal movements into account but slower.*/
 		float xDistance = (Math.abs(X-End.X)/Width);
 		float yDistance = (Math.abs(End.Y-Y)/Height);
 		
@@ -80,14 +95,15 @@ public class GridNode {
 	    else
 	    	H = 14*xDistance + 10*(yDistance-xDistance);
 		
-		//H = (float) Math.sqrt(Math.pow((X-End.X)/Width, 2) + Math.pow((Y-End.Y)/Height, 2));
-		
+		/*F cost is the sum of G cost and Heuristic, and is used to compare each node to see which
+		 *is closest to the end node. */
 		F = G + H;
 	}
 	
 	public void Reset()
 	{
 		F = G = H = 0;
+		Parent = null;
 	}
 	
 	@Override
